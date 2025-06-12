@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
-
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
@@ -15,8 +15,11 @@ router.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: 'Email already in use' });
 
-    // Create and save new user (password will be hashed via pre-save hook)
-    const user = new User({ name, email, password, role });
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create and save new user
+    const user = new User({ name, email, password: hashedPassword, role });
     await user.save();
 
     res.status(201).json({ message: 'User registered successfully' });
@@ -31,12 +34,13 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
+    // Find user by email
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-    // Compare password using schema method
-  
+    // Compare provided password with stored hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
     // Create JWT token
     const token = jwt.sign(
@@ -50,7 +54,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    // Send token in cookie and body
+    // Send token in cookie and response
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -97,4 +101,4 @@ router.get('/verify', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = router;
