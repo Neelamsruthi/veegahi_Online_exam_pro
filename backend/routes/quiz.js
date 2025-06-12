@@ -4,7 +4,7 @@ const Quiz = require('../models/Quiz');
 const QuizAnswer = require('../models/QuizAnswer');
 const { authenticateToken } = require('../middleware/middleware');
 
-// ---------- PUBLIC: Get all quizzes for students (no auth required) ----------
+// ---------- PUBLIC: Get all quizzes ----------
 router.get('/', async (req, res) => {
   try {
     const quizzes = await Quiz.find();
@@ -14,9 +14,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ---------- ADMIN ROUTES (require admin role) ----------
-
-// Get all quizzes with submissions count for admin dashboard
+// ---------- ADMIN ROUTES ----------
 router.get('/admin', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
@@ -36,12 +34,11 @@ router.get('/admin', authenticateToken, async (req, res) => {
   }
 });
 
-// Create new quiz
 router.post('/', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
   try {
-    const quiz = new Quiz({ ...req.body, creator: req.user.id });
+    const quiz = new Quiz({ ...req.body, creator: req.user.userId });
     await quiz.save();
     res.status(201).json({ message: 'Quiz created', quiz });
   } catch (err) {
@@ -49,7 +46,6 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Update quiz (title/questions)
 router.put('/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
@@ -88,7 +84,6 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete quiz (admin only)
 router.delete('/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') 
     return res.status(403).json({ message: 'Forbidden' });
@@ -98,18 +93,13 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     if (!quiz) 
       return res.status(404).json({ message: 'Quiz not found' });
 
-   await Quiz.findByIdAndDelete(req.params.id);
-
+    await Quiz.findByIdAndDelete(req.params.id);
     res.json({ message: 'Quiz deleted' });
   } catch (err) {
-    console.error("Error deleting quiz:", err);
     res.status(500).json({ message: 'Failed to delete quiz', error: err.message });
   }
 });
 
-// ---------- NEW: ADD / DELETE INDIVIDUAL QUESTIONS ----------
-
-// Add a new question to quiz
 router.post('/:id/questions', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
@@ -136,7 +126,6 @@ router.post('/:id/questions', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete a question from quiz by index
 router.delete('/:id/questions/:index', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
@@ -158,8 +147,6 @@ router.delete('/:id/questions/:index', authenticateToken, async (req, res) => {
 });
 
 // ---------- STUDENT ROUTES ----------
-
-// Get single quiz (for taking quiz)
 router.get('/:id', async (req, res) => {
   try {
     const quiz = await Quiz.findById(req.params.id);
@@ -170,10 +157,58 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Submit quiz answer (authenticated)
-router.post('/:id/answer', authenticateToken, async (req, res) => {
+
+ 
+// ✅ ADMIN: Get quiz results with user populated
+router.get('/:id/answers', authenticateToken, async (req, res) => {
   try {
-    const quiz = await Quiz.findById(req.params.id);
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admins can view quiz results' });
+    }
+ 
+    const results = await QuizAnswer.find({ quiz: req.params.id })
+      .populate('user', 'name email') // ✅ This will now work properly
+      .populate('quiz', 'title');
+ 
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+ 
+// ✅ Optional debug route
+router.get('/test-populate', async (req, res) => {
+  try {
+    const oneAnswer = await QuizAnswer.findOne().populate('user', 'name email');
+    res.json(oneAnswer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+ 
+
+async function handleQuizSubmission(req, res, restrict = false) {
+  const quizId = req.params.id;
+  const userId = req.user.userId;
+
+  try {
+    if (restrict) {
+      const lastAttempt = await QuizAnswer.findOne({
+        quiz: quizId,
+        user: userId,
+      }).sort({ createdAt: -1 });
+
+      if (lastAttempt) {
+        const hoursSinceLastAttempt = (Date.now() - new Date(lastAttempt.createdAt)) / (1000 * 60 * 60);
+        if (hoursSinceLastAttempt < 24) {
+          return res.status(403).json({
+            message: `You can attempt this quiz again after ${Math.ceil(24 - hoursSinceLastAttempt)} hours.`,
+          });
+        }
+      }
+    }
+
+    const quiz = await Quiz.findById(quizId);
     if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
 
     const { answers } = req.body;
@@ -183,32 +218,79 @@ router.post('/:id/answer', authenticateToken, async (req, res) => {
       if (answers[i] === q.correctAnswer) score++;
     });
 
-    const quizAnswer = new QuizAnswer({
-      quiz: quiz._id,
-      user: req.user.id,
+    const newAnswer = new QuizAnswer({
+      quiz: quizId,
+      user: userId,
       answers,
       score,
     });
 
-    await quizAnswer.save();
-    res.status(201).json({ message: 'Answer submitted', score });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to submit answer', error: err.message });
+    await newAnswer.save();
+    res.status(201).json({ message: 'Quiz submitted successfully', score });
+
+  } catch (error) {
+    console.error('Quiz submission error:', error);
+    res.status(500).json({ message: 'Failed to submit quiz', error: error.message });
+  }
+}
+
+// ✅ Route 1: With restriction (recommended route)
+router.post('/quiz/:id/submit', authenticateToken, (req, res) => {
+  handleQuizSubmission(req, res, true); // true = restrict within 24 hrs
+});
+
+// ✅ Route 2: Legacy/no restriction (optional or admin/internal use)
+router.post('/:id/answer', authenticateToken, (req, res) => {
+  handleQuizSubmission(req, res, false); // false = allow anytime
+});
+
+router.get('/quiz/:id/last-submission', authenticateToken, async (req, res) => {
+  const quizId = req.params.id;
+  const userId = req.user.userId;
+
+  try {
+    const lastSubmission = await QuizAnswer.findOne({
+      quiz: quizId,
+      user: userId,
+    }).sort({ createdAt: -1 });
+
+    if (!lastSubmission) {
+      return res.status(404).json({ message: 'No submission found' });
+    }
+
+    res.json(lastSubmission);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch last submission' });
   }
 });
 
-// Get all answers/submissions for a quiz (authenticated)
-router.get('/:id/answers', authenticateToken, async (req, res) => {
+router.get('/:id/check-attempt', authenticateToken, async (req, res) => {
+  const quizId = req.params.id;
+  const userId = req.user.userId;
+
   try {
-    const quizId = req.params.id;
+    const lastAttempt = await QuizAnswer.findOne({
+      quiz: quizId,
+      user: userId,
+    }).sort({ createdAt: -1 });
 
-    const submissions = await QuizAnswer.find({ quiz: quizId })
-      .populate('user', 'name email')
-      .exec();
+    if (!lastAttempt || !lastAttempt.createdAt) {
+      return res.json({ attempted: false });
+    }
 
-    res.json(submissions);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch quiz submissions', error: err.message });
+    const createdAt = new Date(lastAttempt.createdAt);
+    const hoursSinceLastAttempt = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+
+    if (hoursSinceLastAttempt < 24) {
+      return res.json({
+        attempted: true,
+        message: `You can retake this quiz after ${Math.ceil(24 - hoursSinceLastAttempt)} hours.`,
+      });
+    } else {
+      return res.json({ attempted: false });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking attempt status' });
   }
 });
 

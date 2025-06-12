@@ -71,9 +71,7 @@ const Navbar = () => {
               <Link to="/login" className="block text-gray-700 hover:text-indigo-600 font-medium">
                 Login
               </Link>
-              <Link to="/register" className="block text-gray-700 hover:text-indigo-600 font-medium">
-                Register
-              </Link>
+              
             </>
           ) : (
             <>

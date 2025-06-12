@@ -8,10 +8,11 @@ function authenticateToken(req, res, next) {
   if (!token) {
     return res.status(401).json({ message: 'Access denied. No token provided.' });
   }
-
+ 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = { userId: decoded.userId, role: decoded.role };  
+    req.user = { userId: decoded.userId, role: decoded.role };
+ // ✅ FIXED here
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid token.' });
