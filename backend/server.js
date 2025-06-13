@@ -17,7 +17,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://192.168.0.8:5173'],
+  origin: ['http://localhost:5173', 'http://192.168.1.6:5173'],
   credentials: true
 }));
 
@@ -115,7 +115,7 @@ app.get('/*', (req, res) => {
 });
 
 // Start server
-const PORT = 8000;
+const PORT = 8100;
 const HOST = '0.0.0.0';  // Bind to all interfaces (both local and public IP)
 
 
