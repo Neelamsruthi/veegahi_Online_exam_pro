@@ -29,6 +29,9 @@ const Navbar = () => {
                 <Link to="/login" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
                   Login
                 </Link>
+                {/* <Link to="/register" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                  Register
+                </Link> */}
                 
               </>
             ) : (

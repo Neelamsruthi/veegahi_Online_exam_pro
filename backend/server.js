@@ -17,9 +17,14 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://192.168.1.6:5173'],
+  origin: [
+    'http://localhost:5173',
+    'http://192.168.0.5:5173',
+    'http://124.123.120.85'
+  ],
   credentials: true
 }));
+
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
@@ -40,6 +45,7 @@ uploadDirs.forEach(dir => {
     fs.mkdirSync(dir, { recursive: true });
     console.log(`Created directory: ${dir}`);
   }
+  
 });
 
 // Multer memory storage for Excel upload
@@ -106,17 +112,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Server error' });
 });
 
-// ⚠ IMPORTANT: serve static after all API routes
+
 app.use(express.static(path.resolve(__dirname, '../frontend/dist')));
 
-// ✅ FINAL FIX FOR PATH-TO-REGEXP v8+
 app.get('/*', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../frontend/dist/index.html'));
 });
 
-// Start server
 const PORT = 8100;
-const HOST = '0.0.0.0';  // Bind to all interfaces (both local and public IP)
+const HOST = '0.0.0.0';  
 
 
 app.listen(PORT, HOST, () => {

@@ -4,7 +4,7 @@ const api = axios.create({
   baseURL: "/",  // <-- relative URL will use same host and port
   withCredentials: true,
   headers: {
-    "Content-Type": "application/json",
+    "Content-Type": "application/json",   
     Accept: "application/json",
   },
 });
