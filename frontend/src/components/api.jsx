@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "/",  // <-- relative URL will use same host and port
+  baseURL: "/", 
+ //baseURL: "http://localhost:8100/",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",   
