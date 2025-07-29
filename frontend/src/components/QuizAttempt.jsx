@@ -8,7 +8,7 @@ export default function QuizAttempt() {
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [submitted, setSubmitted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60); // countdown in seconds
+  const [timeLeft, setTimeLeft] = useState(2700); // countdown in seconds
   const answersRef = useRef([]);
  
   useEffect(() => {
