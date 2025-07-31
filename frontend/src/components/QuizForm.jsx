@@ -91,14 +91,25 @@ export default function QuizForm() {
           <h3 className="text-lg font-semibold text-gray-700">Add Question</h3>
 
           <label className="block font-medium text-sm">
-            Question <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={questionText}
-            onChange={e => setQuestionText(e.target.value)}
-            className="w-full p-3 border rounded focus:outline-none focus:ring focus:border-blue-500"
-          />
+  Question <span className="text-red-500">*</span>
+</label>
+<textarea
+  value={questionText}
+  onChange={e => setQuestionText(e.target.value)}
+  className="w-full p-3 border rounded focus:outline-none focus:ring focus:border-blue-500 break-words whitespace-pre-wrap"
+  placeholder="Enter your question here. Press Enter to start a new line."
+  rows={4}
+  style={{
+    minHeight: '100px',
+    maxHeight: '300px',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    resize: 'vertical',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word'
+  }}
+/>
+
 
           <label className="block font-medium text-sm">Options <span className="text-red-500">*</span></label>
           <div className="grid grid-cols-2 gap-3">
@@ -148,7 +159,9 @@ export default function QuizForm() {
             <ul className="space-y-3">
               {questions.map((q, idx) => (
                 <li key={idx} className="p-3 border rounded bg-gray-50">
-                  <strong>Q{idx + 1}:</strong> {q.questionText}
+                  <strong>Q{idx + 1}:</strong> {q.questionText.split('\n').map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
                   <ul className="ml-5 mt-1 list-disc text-sm text-gray-700">
                     {q.options.map((opt, i) => (
                       <li key={i} className={i === q.correctAnswer ? 'font-semibold text-green-700' : ''}>
