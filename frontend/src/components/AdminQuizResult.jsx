@@ -147,6 +147,14 @@ export default function AdminQuizResult() {
                 <strong>Score:</strong>{" "}
                 <span className="text-green-700 font-semibold">{result.score}</span>
               </p>
+               <p className="text-gray-700">
+      <strong>Status:</strong>{" "}
+      {result.terminated ? (
+        <span className="text-red-600 font-semibold">Terminated 🚫</span>
+      ) : (
+        <span className="text-green-600 font-semibold">Completed ✅</span>
+      )}
+    </p>
             </div>
           ))}
         </div>

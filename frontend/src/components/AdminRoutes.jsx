@@ -19,7 +19,7 @@ const AdminRoutes = () => {
   <Route path="createquiz" element={<QuizForm />} />
   <Route path="quizzes" element={<AdminQuizList />} />
   <Route path="quizzes/:id/edit" element={<AdminQuizEdit />} />
-  <Route path="upload-users" element={<AdminUploadExcel />} />
+  <Route path="/upload-excel" element={<AdminUploadExcel />} />
   <Route path="quizzes/:quizId/results" element={<AdminQuizResult />} />
 </Routes>
  

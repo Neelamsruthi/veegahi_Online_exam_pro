@@ -11,8 +11,12 @@ export default function UserQuizList() {
 
   useEffect(() => {
     const fetchQuizzes = async () => {
+        console.log("📡 Fetching quizzes...");
       try {
-        const res = await api.get('/api/quizzes');
+        // 🔄 Fetch only assigned quizzes to this student
+        const res = await api.get('/api/quizzes/student/assigned');
+              console.log("✅ Quizzes received:", res.data);
+
         setQuizzes(res.data);
 
         const statuses = {};
@@ -22,7 +26,7 @@ export default function UserQuizList() {
             statuses[quiz._id] = response.data;
           } catch (err) {
             console.error(`Error checking attempt for quiz ${quiz._id}:`, err.response?.data || err.message);
-            statuses[quiz._id] = { attempted: false }; // fallback to allow
+            statuses[quiz._id] = { attempted: false }; // fallback
           }
         }
         setAttemptStatus(statuses);

@@ -9,17 +9,32 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 // ====================== REGISTER =========================
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const {
+      name,
+      email,
+      password,
+      role,
+      collegeName,
+      branch,
+      gender
+    } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: 'Email already in use' });
+    if (existingUser)
+      return res.status(400).json({ message: 'Email already in use' });
 
-    // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create and save new user
-    const user = new User({ name, email, password: hashedPassword, role });
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      collegeName,
+      branch,
+      gender
+    });
+
     await user.save();
 
     res.status(201).json({ message: 'User registered successfully' });
@@ -28,6 +43,7 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ message: 'Registration failed', error: err.message });
   }
 });
+
 
 // ====================== LOGIN =========================
 router.post('/login', async (req, res) => {
@@ -48,7 +64,9 @@ router.post('/login', async (req, res) => {
         userId: user._id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
+        collegeName: user.collegeName,
+         branch: user.branch 
       },
       JWT_SECRET,
       { expiresIn: '1h' }

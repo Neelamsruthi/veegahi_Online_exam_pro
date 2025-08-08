@@ -11,8 +11,8 @@ function authenticateToken(req, res, next) {
  
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = { userId: decoded.userId, role: decoded.role };
- // ✅ FIXED here
+    req.user = { userId: decoded.userId, role: decoded.role ,collegeName: decoded.collegeName, // ✅ Include this
+      branch: decoded.branch };
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid token.' });

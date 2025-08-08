@@ -1,14 +1,16 @@
-// models/QuizAnswer.js
 const mongoose = require('mongoose');
- 
+
+const answerSchema = new mongoose.Schema({
+  type: { type: String, enum: ['mcq', 'fill_blank'], required: true },
+  answer: mongoose.Schema.Types.Mixed, // number for mcq, string for fill_blank
+});
+
 const quizAnswerSchema = new mongoose.Schema({
-  quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // ✅ this is important
-  answers: [Number],
-  score: Number,
-  terminated:{type:String,default:false},
+  quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  answers: [answerSchema],
+  score: { type: Number, required: true },
+  terminated: { type: Boolean, default: false },
 }, { timestamps: true });
- 
+
 module.exports = mongoose.model('QuizAnswer', quizAnswerSchema);
- 
- 

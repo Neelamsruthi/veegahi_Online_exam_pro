@@ -8,6 +8,9 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, enum: ['student', 'admin'], },
   avatar: { type: String },
   description: { type: String },
+  collegeName: { type: String },   // ✅ New Field
+  branch: { type: String },        // ✅ New Field
+  gender: { type: String, enum: ['Male', 'Female', 'Other'] },
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
   
 }, { timestamps: true });

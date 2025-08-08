@@ -51,6 +51,7 @@ uploadDirs.forEach(dir => {
 // Multer memory storage for Excel upload
 const upload = multer({ storage: multer.memoryStorage() });
 
+
 app.post('/upload-users-excel', upload.single("file"), async (req, res) => {
   try {
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
@@ -60,20 +61,24 @@ app.post('/upload-users-excel', upload.single("file"), async (req, res) => {
     const savedEmails = [];
 
     for (const user of data) {
-      if (!user.email || !user.password || !user.name) continue;
+      if (!user.email || !user.password || !user.name || !user.collegeName || !user.branch || !user.gender) continue;
 
       const exists = await User.findOne({ email: user.email });
       if (!exists) {
         const hashedPassword = await bcrypt.hash(String(user.password), 10);
 
-        const newUser = new User({
-          name: user.name,
-          email: user.email,
-          password: hashedPassword,
-          role: user.role && ['student', 'admin'].includes(user.role.toLowerCase())
-            ? user.role.toLowerCase()
-            : 'student'
-        });
+       const newUser = new User({
+  name: user.name,
+  email: user.email,
+  password: hashedPassword,
+  role: user.role && ['student', 'admin'].includes(user.role.toLowerCase())
+    ? user.role.toLowerCase()
+    : 'student',
+  collegeName: user.collegeName,
+  branch: user.branch,
+  gender: user.gender
+});
+
 
         await newUser.save();
         savedEmails.push(user.email);
@@ -87,6 +92,7 @@ app.post('/upload-users-excel', upload.single("file"), async (req, res) => {
   }
 });
 
+
 // Routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
@@ -99,14 +105,12 @@ const enrollmentsRoutes = require('./routes/enrollments');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-//app.use('/api/courses', courseRoutes);
-app.use('/api/quizzes', quizRoutes);
-//app.use('/api/follow', followRoutes);
-//app.use('/api/notifications', notificationRoutes);
-app.use('/api/admin', adminRoutes);
-//app.use('/api', enrollmentsRoutes);
 
-// Error handling middleware
+app.use('/api/quizzes', quizRoutes);
+
+app.use('/api/admin', adminRoutes);
+
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Server error' });
